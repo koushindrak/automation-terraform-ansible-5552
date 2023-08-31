@@ -1,0 +1,19 @@
+---
+- name: This is the main playbook with 4 roles
+  hosts: linux
+  gather_facts: true
+  
+  pre_tasks:
+    - debug:
+        msg: "Pre activity from here"
+  
+  roles:
+    - datadisk-n01545552
+    - profile-n01545552
+    - user-n01545552
+    - webserver-n01545552
+
+  post_tasks:
+    - debug:
+        msg: "Post activity from here"
+

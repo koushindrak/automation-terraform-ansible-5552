@@ -1,0 +1,41 @@
+- block:
+    - name: Set up Apache Server
+      yum:
+        name: "httpd"
+        state: present
+      notify:
+        - restart_httpd
+      when: ansible_distribution == "CentOS"
+
+    - name: Initialize index files
+      file:
+        path: "roles/webserver-n01545552/files/{{ ansible_facts['hostname'] }}.html"
+        state: touch
+      delegate_to: localhost
+      become: false
+
+    - name: Insert content into index files
+      lineinfile:
+        path: "roles/webserver-n01545552/files/{{ ansible_facts['hostname'] }}.html"
+        insertafter: EOF
+        state: present
+        line: "This is host - {{ ansible_facts['hostname'] }}"
+
+      delegate_to: localhost
+      become: false
+
+    - name: Transfer index files to target nodes
+      copy:
+        src: "roles/webserver-n01545552/files/{{ ansible_facts['hostname'] }}.html"
+        dest: "{{ copy['dest'] }}"
+        mode: "{{ copy['mode'] }}"
+
+  always:
+    - name: Verify index content
+      command: "cat {{ copy['dest'] }}"
+      register: index_check
+
+    - name: Debug index content
+      debug:
+        msg:
+          - "{{ index_check.stdout_lines }}"

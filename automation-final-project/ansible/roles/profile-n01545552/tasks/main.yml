@@ -1,0 +1,22 @@
+# Task definitions for handling profile configuration
+- block:
+
+    - name: Inserting text content into specified file
+      blockinfile:
+        path: "{{ profile_config['path'] }}"
+        insertafter: EOF
+        backup: true
+        state: present
+        block: |
+          {{ profile_config['content'] }}
+
+  always:
+    # Predefined command to extract file information
+    - name: Verification of content within file
+      command: "cat {{ profile_config['path'] }}"
+      register: content_result
+
+    - name: Debugging file-related data
+      debug:
+        msg:
+          - "{{ content_result.stdout_lines }}"

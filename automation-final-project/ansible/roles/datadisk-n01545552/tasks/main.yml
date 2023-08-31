@@ -1,0 +1,65 @@
+# Configuration for handling data_disk_n01545552 operations
+- block:
+
+    - name: Define data disk partitions
+      parted:
+        device: "/dev/{{ partition_detail.device }}"
+        number: "{{ partition_detail.number }}"
+        fs_type: "{{ partition_detail.fs_type }}"
+        part_start: "{{ partition_detail.part_start }}"
+        part_end: "{{ partition_detail.part_end }}"
+        state: present
+      loop: "{{ partition_attributes }}"
+      loop_control:
+        loop_var: partition_detail
+
+    - name: Format Filesystem as Specified
+      filesystem:
+        fstype: "{{ filesystem_detail.fstype }}"
+        dev: "{{ filesystem_detail.src }}"
+      loop: "{{ filesystem_attributes }}"
+      loop_control:
+        loop_var: filesystem_detail
+
+    - name: Integrate data disk and adjust fstab
+      mount:
+        path: "{{ mount_detail.path }}"
+        src: "{{ mount_detail.src }}"
+        fstype: "{{ mount_detail.fstype }}"
+        state: mounted
+        backup: true
+      loop: "{{ filesystem_attributes }}"
+      loop_control:
+        loop_var: mount_detail
+
+  rescue:
+    - name: Undo partitions if faced with failure
+      parted:
+        device: "/dev/{{ partition_detail.device }}"
+        number: "{{ partition_detail.number }}"
+        fs_type: "{{ partition_detail.fs_type }}"
+        part_start: "{{ partition_detail.part_start }}"
+        part_end: "{{ partition_detail.part_end }}"
+        state: absent
+      loop: "{{ partition_attributes }}"
+      loop_control:
+        loop_var: partition_detail
+
+  always:
+    # Preset commands to extract details about disk operations
+    - name: Examine contents of fstab
+      command: cat /etc/fstab
+      register: fstab_check
+    - name: Analyze active devices
+      command: df -Th
+      register: device_check
+    - name: Review existing block setups
+      command: lsblk
+      register: block_check
+
+    - name: Share insights about disk-related elements
+      debug:
+        msg:
+          - "{{ fstab_check.stdout_lines }}"
+          - "{{ device_check.stdout_lines }}"
+          - "{{ block_check.stdout_lines }}"

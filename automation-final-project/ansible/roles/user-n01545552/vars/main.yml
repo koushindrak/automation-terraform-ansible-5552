@@ -1,0 +1,8 @@
+group_name: cloudadmins
+
+users:
+  - { name: user100, groups: ['cloudadmins', 'wheel'] }
+  - { name: user200, groups: ['cloudadmins', 'wheel'] }
+  - { name: user300, groups: ['cloudadmins', 'wheel'] }
+
+command: cat /etc/group
